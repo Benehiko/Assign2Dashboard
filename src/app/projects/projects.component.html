@@ -1,0 +1,320 @@
+<mat-tab-group>
+  <mat-tab label="Project Dashboard">
+    <div class="row">
+      <div class="col-12 col-md-12 col-sm-6">
+        <div class="row mx-md-n5">
+          <div class="col px-md-5">
+            <div class="p-3">
+              <mat-form-field>
+                <input matInput (keyup)="applyFilter($event.target.value)" placeholder="Filter">
+              </mat-form-field>
+            </div>
+          </div>
+          <div class="col-6 px-md-5">
+            <div class="p-3">
+              <mat-paginator [pageSizeOptions]="[5, 10, 20, 30, 50]"></mat-paginator>
+            </div>
+          </div>
+        </div>
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8 table-responsive" matSort>
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>#</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="mx-3">
+                {{row.id}}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="mx-3 justify-content-center">
+                Projects
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="mx-3">
+                {{row.name}}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="manager">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="mx-3 justify-content-center">
+                Manager
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="mx-3">
+                {{row.manager}}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="budgetPercent">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="mx-3 justify-content-center">
+                Budget Used
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="mx-3">
+                {{row.budgetPercent}}%
+                ({{(row.budgetPercent > 99) ? 'Over-budget' : (row.budgetPercent > 80) ? 'Care-budget' : 'In-budget'}}
+                )
+                <ngb-progressbar
+                  striped="true"
+                  [type]="(row.budgetPercent>= 70 && row.budgetPercent <= 89) ? 'warning' : (row.budgetPercent >= 90) ? 'danger' : (row.budgetPercent <= 25) ? 'success' : 'info'"
+                  animated="true"
+                  [value]="row.budgetPercent"
+                  [max]="(row.budgetPercent>99) ? row.budgetPercent : 100"
+                >
+                </ngb-progressbar>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="deadline">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="mx-3 justify-content-center">
+                Deadline
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="mx-3">
+                {{row.deadline.toDateString()}}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="daysleft">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="mx-3 justify-content-center">
+                Days until Deadline
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="mx-3">
+                <div *ngIf="(row.daysleft > 0); else pastdeadline">
+                  <div class="alert alert-info">
+                    <p>{{row.daysleft}} days until deadline</p>
+                  </div>
+                </div>
+                <ng-template #pastdeadline>
+                  <div class="alert alert-danger">
+                    <p>{{row.daysleft * -1}} days past deadline</p>
+                  </div>
+                </ng-template>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="mx-3 justify-content-center">
+                Status
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="mx-3">
+                {{(row.complete) ? 'Complete' : 'In-progress'}}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="satisfaction">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="mx-3 justify-content-center">
+                Customer Satisfaction
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="mx-3 justify-content-center">
+                <div *ngIf="(row.complete); else pending">
+                  <ng-template #t let-fill="fill">
+              <span class="star" [class.full]="fill === 100">
+                <span class="half" [style.width.%]="fill">&hearts;</span>&hearts;
+              </span>
+                  </ng-template>
+
+                  <ngb-rating [(rate)]="row.custsat" [starTemplate]="t" [readonly]="true" max="5"></ngb-rating>
+                </div>
+                <ng-template #pending>
+                  Pending...
+                </ng-template>
+              </div>
+
+              <!--{{(row.complete) ? row.custsat + '%' : 'Pending'}} / 90% KPI-->
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="radarChart">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="mx-3 justify-content-center">
+                Overall Chart
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div style="display: block">
+                <canvas baseChart
+                        [datasets]="row.radarChart.radarChartData"
+                        [options]="row.radarChart.radarChartOptions"
+                        [labels]="row.radarChart.radarChartLabels"
+                        [chartType]="row.radarChart.radarChartType">
+                </canvas>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+    </div>
+  </mat-tab>
+  <mat-tab label="Staff Dashboard">
+    <div class="row">
+      <div class="col-12 col-md-12 col-sm-6">
+        <canvas baseChart
+                [datasets]="barChartData"
+                [labels]="barChartLabels"
+                [options]="barChartOptions"
+                [plugins]="barChartPlugins"
+                [legend]="barChartLegend"
+                [chartType]="barChartType">
+        </canvas>
+      </div>
+    </div>
+
+  </mat-tab>
+  <mat-tab label="Completed Project Dashboard">
+    <div class="row">
+      <div class="col-12 col-md-12 col-sm-12 mx-3 justify-content-between">
+        Satisfaction Ratings with 'Good' or higher {{kpi}}%
+        <ngb-progressbar
+          striped="true"
+          [type]="(kpi >= 50 && kpi <= 60) ? 'warning' : (kpi <= 49) ? 'danger' : (kpi >= 90) ? 'success' : 'info'"
+          animated="true"
+          [value]="kpi"
+          [max]="(kpi>99) ? kpi : 100">
+        </ngb-progressbar>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-6 col-md-6 col-sm-12">
+        <canvas baseChart
+                [data]="pieChartData"
+                [labels]="pieChartLabels"
+                [chartType]="pieChartType"
+                [options]="pieChartOptions"
+                [plugins]="pieChartPlugins"
+                [colors]="pieChartColors"
+                [legend]="pieChartLegend">
+        </canvas>
+      </div>
+      <div class="col-6 col-md-6 col-sm-12">
+        <canvas baseChart
+                [data]="polarAreaChartData"
+                [labels]="polarAreaChartLabels"
+                [legend]="polarAreaLegend"
+                [chartType]="polarAreaChartType">
+        </canvas>
+      </div>
+    </div>
+  </mat-tab>
+</mat-tab-group>
+
+
+<!--<form>
+  <div class="form-group form-inline">
+    Full text search: <input class="form-control ml-2" type="text" [formControl]="filter"/>
+  </div>
+</form>
+<table class="table table-hover">
+  <thead>
+  <th>Projects</th>
+  <th>Manager</th>
+  <th>Budget Used</th>
+  <th>Deadline</th>
+  <th>Deadline Days</th>
+  <th>Status</th>
+  <th>Client Satisfaction / KPI</th>
+  </thead>
+  <tbody>
+  <tr *ngFor="let p of projects">
+    <td>
+      {{p.name}}
+    </td>
+    <td>
+      {{p.manager}}
+    </td>
+    <td>
+      <p>{{p.budgetPercent}}%
+        ({{(p.budgetPercent > 99) ? 'Over-budget' : (p.budgetPercent > 80) ? 'Care-budget' : 'In-budget'}})</p>
+      <ngb-progressbar
+        striped="true"
+        [type]="(p.budgetPercent>= 70 && p.budgetPercent <= 89) ? 'warning' : (p.budgetPercent >= 90) ? 'danger' : (p.budgetPercent <= 25) ? 'success' : 'info'"
+        animated="true"
+        [value]="p.budgetPercent"
+        [max]="(p.budgetPercent>99) ? p.budgetPercent : 100"
+      >
+      </ngb-progressbar>
+    </td>
+    <td>
+      {{p.deadline.toDateString()}}
+    </td>
+    <td>
+      <div *ngIf="(p.daysleft > 0); else pastdeadline">
+        <div class="alert alert-info">
+          {{p.daysleft}} days until deadline
+        </div>
+      </div>
+      <ng-template #pastdeadline>
+        <div class="alert alert-danger">
+          {{p.daysleft * -1}} days past deadline
+        </div>
+      </ng-template>
+
+
+    </td>
+    <td>
+      {{(p.complete) ? 'Complete' : 'In-progress'}}
+    </td>
+    <td>{{(p.complete) ? p.custsat + '%' : 'Pending'}} / 90% KPI</td>
+  </tr>
+  </tbody>
+</table>-->
+
+<!--<div class="d-flex justify-content-between p-2">
+  <ngb-pagination [collectionSize]="collectionSize" [(page)]="page" [pageSize]="pageSize">
+  </ngb-pagination>
+
+  <select class="custom-select" style="width: auto" [(ngModel)]="pageSize">
+    <option [ngValue]="5">5 items per page</option>
+    <option [ngValue]="10">10 items per page</option>
+    <option [ngValue]="30">30 items per page</option>
+  </select>
+</div>-->
+
+<!--<div class="mt-3" style="border-top: 1px solid #ccc;">
+  <div *ngFor="let chunk of radarCharts" class="row mt-2" style="border-bottom: 1px solid #ccc;">
+    <div *ngFor="let i of chunk" class="col-3 col-md-3 col-sm-12" style="border-right: 1px solid #ccc;">
+      <div class="card">
+        <h4 class="card-title justify-content-center">
+          {{i.name}}
+        </h4>
+        <div class="card-body">
+          <canvas baseChart
+                  [datasets]="i.radarChartData"
+                  [options]="i.radarChartOptions"
+                  [labels]="i.radarChartLabels"
+                  [chartType]="i.radarChartType"
+          >
+          </canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>-->
+
